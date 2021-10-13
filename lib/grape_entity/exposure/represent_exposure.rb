@@ -39,6 +39,12 @@ module Grape
                            end
         end
 
+        def to_params
+          documentation = self.documentation || {}
+          is_param = documentation.key?(:is_param) ? documentation[:is_param] : false
+          { key => { **documentation, is_param: is_param, nesting: using_class_name.to_params } }
+        end
+
         private
 
         def using_options_for(options)

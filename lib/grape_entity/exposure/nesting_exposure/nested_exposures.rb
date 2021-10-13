@@ -71,6 +71,16 @@ module Grape
             end
           end
 
+          def to_params
+            params = {}
+
+            each do |exposure|
+              params.merge!(exposure.to_params)
+            end
+
+            params
+          end
+
           private
 
           def reset_memoization!

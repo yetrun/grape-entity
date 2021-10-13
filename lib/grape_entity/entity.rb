@@ -628,5 +628,9 @@ module Grape
       options[:using] = options.delete(:with) if options.key?(:with)
       options
     end
+
+    def self.to_params
+      root_exposure.to_params
+    end
   end
 end

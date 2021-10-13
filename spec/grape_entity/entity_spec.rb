@@ -1416,6 +1416,59 @@ describe Grape::Entity do
       end
     end
 
+    describe '.to_params' do
+      it '生成一般字段的参数' do
+        subject.expose :name
+        subject.expose :email, documentation: { type: 'String' }
+        subject.expose :location, documentation: { required: true }
+
+        expect(subject.to_params).to eq(
+          name: {},
+          email: { type: 'String' },
+          location: { required: true }
+        )
+      end
+
+      it '可添加 is_param 选项' do
+        subject.expose :name
+        subject.expose :email, documentation: { type: 'String', is_param: true }
+        subject.expose :location, documentation: { required: true, is_param: false }
+
+        expect(subject.to_params).to eq(
+          name: {},
+          email: { type: 'String', is_param: true },
+          location: { required: true, is_param: false }
+        )
+      end
+
+      it '为嵌套实体导出为参数' do
+        address_entity = Class.new(Grape::Entity) do
+          expose :province, :city, :district
+        end
+        subject.expose :location, using: address_entity
+
+        expect(subject.to_params).to eq(
+          location: { is_param: false, nesting: {
+            province: {}, city: {}, district: {}
+          } }
+        )
+      end
+
+      it '为 nested exposures 导出为参数' do
+        subject.expose :location do
+          subject.expose :province
+          subject.expose :city
+          subject.expose :district
+        end
+
+        expect(subject.to_params).to eq(
+          location: { is_param: true, nesting: {
+            province: {}, city: {}, district: {}
+          } }
+        )
+      end
+    end
+
     describe '#initialize' do
       it 'takes an object and an optional options hash' do
         expect { subject.new(Object.new) }.not_to raise_error

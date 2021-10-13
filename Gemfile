@@ -17,4 +17,5 @@ group :test do
   gem 'rb-fsevent'
   gem 'ruby-grape-danger', '~> 0.2', require: false
   gem 'simplecov', require: false
+  gem 'pry-byebug'
 end

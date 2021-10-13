@@ -60,6 +60,21 @@ module Grape
           nested_exposures.deep_complex_nesting?(entity)
         end
 
+        def is_param?
+          is_param = super
+          is_param == :default ? true : is_param
+        end
+
+        def to_params
+          if key
+            documentation = self.documentation || {}
+            is_param = documentation.key?(:is_param) ? documentation[:is_param] : true
+            { key => { **documentation, is_param: is_param, nesting: nested_exposures.to_params } }
+          else
+            nested_exposures.to_params
+          end
+        end
+
         private
 
         def nesting_options_for(options)
