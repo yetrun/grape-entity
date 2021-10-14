@@ -205,6 +205,8 @@ module Grape
 
         if block.parameters.any?
           options[:proc] = block
+        elsif options[:deep]
+          options[:using] = Class.new(Grape::Entity, &block)
         else
           options[:nesting] = true
         end
@@ -569,6 +571,7 @@ module Grape
 
     # All supported options.
     OPTIONS = %i[
+      deep
       rewrite
       as
       if

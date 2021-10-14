@@ -615,6 +615,28 @@ describe Grape::Entity do
             )
           end
         end
+
+        context 'with deep: true' do
+          it '演示如何将数据渲染成 Hash' do
+            subject.expose :foo, :bar
+
+            model = OpenStruct.new(foo: 'foo', bar: 'bar')
+            expect(subject.new(model).serializable_hash(nil)).to eq(foo: 'foo', bar: 'bar')
+          end
+
+          it '测试 deep: true' do
+            subject.expose :nested, deep: true do
+              expose :foo, :bar
+            end
+
+            model = OpenStruct.new(
+              nested: OpenStruct.new(foo: 'foo', bar: 'bar')
+            )
+            json = subject.new(model).serializable_hash(nil)
+            expect(json).to have_key(:nested)
+            expect(json[:nested]).to eq(foo: 'foo', bar: 'bar')
+          end
+        end
       end
 
       context 'inherited.root_exposures' do
