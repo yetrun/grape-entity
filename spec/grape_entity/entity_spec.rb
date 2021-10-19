@@ -617,24 +617,42 @@ describe Grape::Entity do
         end
 
         context 'with deep: true' do
-          it '演示如何将数据渲染成 Hash' do
+          it '测试简单属性' do
             subject.expose :foo, :bar
 
             model = OpenStruct.new(foo: 'foo', bar: 'bar')
             expect(subject.new(model).serializable_hash(nil)).to eq(foo: 'foo', bar: 'bar')
           end
 
-          it '测试 deep: true' do
+          it '测试 deep 设置为 true' do
             subject.expose :nested, deep: true do
-              expose :foo, :bar
+              subject.expose :foo, :bar
             end
-
             model = OpenStruct.new(
               nested: OpenStruct.new(foo: 'foo', bar: 'bar')
             )
             json = subject.new(model).serializable_hash(nil)
+
             expect(json).to have_key(:nested)
             expect(json[:nested]).to eq(foo: 'foo', bar: 'bar')
+          end
+
+          it '测试 deep 设置为 true（三层）' do
+            subject.expose :nested, deep: true do
+              subject.expose :nested2, deep: true do
+                subject.expose :foo, :bar
+              end
+            end
+            model = OpenStruct.new(
+              nested: {
+                nested2: OpenStruct.new(foo: 'foo', bar: 'bar')
+              }
+            )
+            json = subject.new(model).serializable_hash(nil)
+
+            expect(json).to have_key(:nested)
+            expect(json[:nested]).to have_key(:nested2)
+            expect(json[:nested][:nested2]).to eq(foo: 'foo', bar: 'bar')
           end
         end
       end
@@ -2090,6 +2108,39 @@ describe Grape::Entity do
           expect(rep).to be_kind_of Array
           expect(rep.size).to eq 2
           expect(rep.all? { |r| r.is_a?(EntitySpec::UserEntity) }).to be true
+        end
+      end
+    end
+
+    describe '#delegate_attribute' do
+      context '单个属性' do
+        entity_class = Class.new(Grape::Entity)
+
+        it 'delegates 单个属性' do
+          object = { foo: 'foo', bar: 'bar' }
+          rep = entity_class.new(object)
+
+          expect(rep.delegate_attribute(:foo)).to eq 'foo'
+          expect(rep.delegate_attribute(:bar)).to eq 'bar'
+        end
+      end
+
+      context '属性数组' do
+        entity_class = Class.new(Grape::Entity)
+
+        it 'delegates 属性数组' do
+          object = { nested: { foo: 'foo', bar: 'bar' } }
+          rep = entity_class.new(object)
+
+          expect(rep.delegate_attribute([:nested, :foo])).to eq 'foo'
+          expect(rep.delegate_attribute([:nested, :bar])).to eq 'bar'
+        end
+
+        it 'delegates 属性数组，但中间断层' do
+          object = { nested: { foo: 'foo', bar: 'bar' } }
+          rep = entity_class.new(object)
+
+          expect(rep.delegate_attribute([:nested2, :foo])).to be nil
         end
       end
     end

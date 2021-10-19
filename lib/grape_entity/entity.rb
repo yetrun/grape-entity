@@ -205,8 +205,6 @@ module Grape
 
         if block.parameters.any?
           options[:proc] = block
-        elsif options[:deep]
-          options[:using] = Class.new(Grape::Entity, &block)
         else
           options[:nesting] = true
         end
@@ -221,7 +219,14 @@ module Grape
     def self.build_exposure_for_attribute(attribute, nesting_stack, options, block)
       exposure_list = nesting_stack.empty? ? root_exposures : nesting_stack.last.nested_exposures
 
-      exposure = Exposure.new(attribute, options)
+      if !nesting_stack.empty? &&
+         nesting_stack[-1].is_a?(Exposure::NestingExposure) &&
+         nesting_stack[-1].instance_eval { self.options }[:deep]
+        attributes = [nesting_stack[-1].attribute, attribute].flatten
+        exposure = Exposure.new(attributes, options)
+      else
+        exposure = Exposure.new(attribute, options)
+      end
 
       exposure_list.delete_by(attribute) if exposure.override?
 
@@ -541,12 +546,24 @@ module Grape
     end
 
     def delegate_attribute(attribute)
-      if is_defined_in_entity?(attribute)
+      if attribute.is_a?(Array)
+        attribute.reduce(object) do |object_item, attribute_item|
+          break if object_item.nil?
+
+          delegate_attribute_for_object(attribute_item, object_item)
+        end
+      elsif is_defined_in_entity?(attribute)
         send(attribute)
-      elsif @delegator_accepts_opts
-        delegator.delegate(attribute, **self.class.delegation_opts)
       else
-        delegator.delegate(attribute)
+        delegate_attribute_for_object(attribute, object)
+      end
+    end
+
+    def delegate_attribute_for_object(attribute, object)
+      if @delegator_accepts_opts
+        Delegator.new(object).delegate(attribute, **self.class.delegation_opts)
+      else
+        Delegator.new(object).delegate(attribute)
       end
     end
 

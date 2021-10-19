@@ -11,9 +11,10 @@ module Grape
         end
 
         def initialize(attribute, options, conditions)
-          @attribute = attribute.try(:to_sym)
+          @attribute = attribute.is_a?(Array) ? attribute.map(&:to_sym) : attribute.try(:to_sym)
           @options = options
           key = options[:as] || attribute
+          key = key[-1] if key.is_a?(Array)
           @key = key.respond_to?(:to_sym) ? key.to_sym : key
           @is_safe = options[:safe]
           @default_value = options[:default]
