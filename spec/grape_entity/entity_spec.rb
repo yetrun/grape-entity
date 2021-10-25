@@ -1507,6 +1507,14 @@ describe Grape::Entity do
           } }
         )
       end
+
+      it '正确处理 is_array 选项' do
+        subject.expose :foo, documentation: { type: String, is_array: true }
+
+        expect(subject.to_params).to eq(
+          foo: { type: Array[String] }
+        )
+      end
     end
 
     describe '#initialize' do

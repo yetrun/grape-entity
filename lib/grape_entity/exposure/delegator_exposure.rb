@@ -9,7 +9,8 @@ module Grape
         end
 
         def to_params
-          documentation = self.documentation || {}
+          documentation = self.documentation.dup || {}
+
           { key => documentation }
         end
       end

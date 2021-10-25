@@ -20,7 +20,7 @@ module Grape
           @default_value = options[:default]
           @for_merge = options[:merge]
           @attr_path_proc = options[:attr_path]
-          @documentation = options[:documentation]
+          @documentation = normalize_documentation(options[:documentation])
           @override = options[:override]
           @conditions = conditions
         end
@@ -130,6 +130,21 @@ module Grape
         protected
 
         attr_reader :options
+
+        private
+
+        def normalize_documentation(documentation)
+          return documentation unless documentation.is_a?(Hash)
+
+          documentation = (documentation || {}).dup
+
+          is_array = documentation.delete(:is_array) if documentation.key?(:is_array)
+
+          type = documentation[:type]
+          documentation[:type] = Array[type] if is_array && type != Array && !type.is_a?(Array)
+
+          documentation
+        end
       end
     end
   end
